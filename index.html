@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Search App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+            padding: 12px;
+            border: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+        }
+        td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .keywords-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .keyword {
+            background-color: #e1f5fe;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .error {
+            text-align: center;
+            color: #d32f2f;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .no-results {
+            text-align: center;
+            font-style: italic;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Job Search</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search by keywords...">
+    </div>
+    
+    <div id="jobsContainer">
+        <div class="loading">Loading jobs...</div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const jobsContainer = document.getElementById('jobsContainer');
+        
+        // Store all jobs data
+        let allJobs = [];
+        
+        // Fetch jobs from API
+        async function fetchJobs() {
+            try {
+                const response = await fetch('http://127.0.0.1:8080/jobs');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                allJobs = await response.json();
+                displayJobs(allJobs);
+            } catch (error) {
+                console.error('Error fetching jobs:', error);
+                jobsContainer.innerHTML = `
+                    <div class="error">
+                        Failed to load jobs. Please try again later or check if the API server is running.
+                    </div>
+                `;
+            }
+        }
+        
+        // Display jobs in table
+        function displayJobs(jobs) {
+            if (jobs.length === 0) {
+                jobsContainer.innerHTML = '<div class="no-results">No jobs found matching your search.</div>';
+                return;
+            }
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Location</th>
+                        <th>Keywords</th>
+                    </tr>
+                </thead>
+                <tbody id="jobsTableBody">
+                </tbody>
+            `;
+            
+            const tableBody = table.querySelector('#jobsTableBody');
+            
+            jobs.forEach(job => {
+                const row = document.createElement('tr');
+                
+                // Format keywords as tags
+                const keywordsHtml = job.job_title
+                
+                row.innerHTML = `
+                    <td>${job.job_title}</td>
+                    <td>${job.location}</td>
+                    <td class="keywords-cell">${keywordsHtml}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            jobsContainer.innerHTML = '';
+            jobsContainer.appendChild(table);
+        }
+        
+        // Filter jobs based on search input
+        function filterJobs(searchTerm) {
+            if (!searchTerm.trim()) {
+                displayJobs(allJobs);
+                return;
+            }
+            
+            const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+            
+            const filteredJobs = allJobs.filter(job => {
+                const jobKeywords = job.job_title.toLowerCase().split(' ');
+                
+                // Check if any of the search terms match any of the job keywords
+                return searchTerms.some(term => 
+                    jobKeywords.some(keyword => keyword.includes(term))
+                );
+            });
+            
+            displayJobs(filteredJobs);
+        }
+        
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            filterJobs(e.target.value);
+        });
+        
+        // Initialize the app
+        fetchJobs();
+    </script>
+</body>
+</html>
