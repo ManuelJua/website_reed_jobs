@@ -414,8 +414,11 @@
                 initSalaryHistogram(allJobs);
             });
         });
-        searchInput.addEventListener('input', (e) => {
-            filterJobs(e.target.value);
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                filterJobs(e.target.value);
+            }
+
         });
     </script>
 </body>
