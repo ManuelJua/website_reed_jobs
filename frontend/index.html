@@ -495,7 +495,7 @@
             const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
 
             const filteredJobs = allJobs.filter(job => {
-                const jobKeywords = job.job_title.toLowerCase().split(' ');
+                const jobKeywords = job.description.toLowerCase().split(' ');
 
                 // Check if any of the search terms match any of the job keywords
                 return searchTerms.some(term =>
