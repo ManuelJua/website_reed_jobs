@@ -74,7 +74,7 @@
         .tab-button.active {
             background-color: #1565C0;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .tab-content {
@@ -351,8 +351,20 @@
             map.addLayer(markers);
         }
 
+        let salaryChart = null;
+        let jobsByDayChart = null;
+
         // Initialize the salary histogram
         function initSalaryHistogram(jobs) {
+            // Destroy existing charts if they exist
+            if (salaryChart) {
+                salaryChart.destroy();
+            }
+            if (jobsByDayChart) {
+                jobsByDayChart.destroy();
+            }
+
+
             // Prepare salary data excluding outliers
             const salaries = jobs.filter(job => job.salary).map(job => job.salary);
             const q1 = Math.percentile(salaries, 25);
@@ -360,10 +372,11 @@
             const iqr = q3 - q1;
             const upperBound = q3 + 1.5 * iqr;
             const lowerBound = q1 - 1.5 * iqr;
-            
-            const filteredSalaries = salaries.filter(salary => 
+
+            const filteredSalaries = salaries.filter(salary =>
                 salary >= lowerBound && salary <= upperBound
             );
+
 
             // Prepare jobs by day data
             const jobsByDay = {};
@@ -374,14 +387,14 @@
 
             // Create salary distribution chart
             const salaryCtx = document.getElementById('salaryChart').getContext('2d');
-            new Chart(salaryCtx, {
+            salaryChart = new Chart(salaryCtx, {
                 type: 'bar',
                 data: {
-                    labels: Array.from({ length: 20 }, (_, i) => 
+                    labels: Array.from({ length: 20 }, (_, i) =>
                         Math.round(lowerBound + (i * (upperBound - lowerBound) / 20))),
                     datasets: [{
                         label: 'Salary Distribution',
-                        data: getBinCounts(filteredSalaries, 20 , lowerBound, upperBound),
+                        data: getBinCounts(filteredSalaries, 20, lowerBound, upperBound),
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: 1
@@ -418,7 +431,7 @@
 
             // Create jobs by day chart
             const jobsCtx = document.getElementById('jobsByDayChart').getContext('2d');
-            new Chart(jobsCtx, {
+            jobsByDayChart = new Chart(jobsCtx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(jobsByDay).sort(),
@@ -458,13 +471,14 @@
                     }
                 }
             });
+
         }
 
         // Helper function to calculate percentiles
-        Math.percentile = function(arr, p) {
+        Math.percentile = function (arr, p) {
             if (arr.length === 0) return 0;
             arr.sort((a, b) => a - b);
-            const index = Math.ceil((p/100) * arr.length) - 1;
+            const index = Math.ceil((p / 100) * arr.length) - 1;
             return arr[index];
         };
 
@@ -472,7 +486,7 @@
         function getBinCounts(data, numBins, min, max) {
             const bins = new Array(numBins).fill(0);
             const binWidth = (max - min) / numBins;
-            
+
             data.forEach(value => {
                 const binIndex = Math.min(
                     Math.floor((value - min) / binWidth),
@@ -480,7 +494,7 @@
                 );
                 if (binIndex >= 0) bins[binIndex]++;
             });
-            
+
             return bins;
         }
 
