@@ -206,7 +206,7 @@
     <div class="tabs">
         <button class="tab-button active" onclick="openTab(event, 'listTab')">List View</button>
         <button class="tab-button" onclick="openTab(event, 'mapTab')">Map View</button>
-        <button class="tab-button" onclick="openTab(event, 'salaryTab')">Salary Distribution</button>
+        <button class="tab-button" onclick="openTab(event, 'analyticsTab')">Analytics</button>
     </div>
 
     <!-- Tab content -->
@@ -223,7 +223,7 @@
         </div>
     </div>
 
-    <div id="salaryTab" class="tab-content">
+    <div id="analyticsTab" class="tab-content">
         <div id="salaryHistogram">
             <canvas id="salaryChart"></canvas>
             <canvas id="jobsByDayChart"></canvas>
@@ -532,11 +532,6 @@
             // Invalidate map size when switching to map tab
             if (tabName === 'mapTab') {
                 map.invalidateSize();
-                // Recenter map on markers if there are any
-                const markers = Array.from(document.querySelectorAll('.leaflet-marker-icon'));
-                if (markers.length > 0) {
-                    map.fitBounds(L.featureGroup(markers.map(m => L.marker([m.lat, m.lng]))).getBounds());
-                }
             }
         }
 
