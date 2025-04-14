@@ -1,1 +1,4 @@
 node_modules
+backend/backend_env
+backend/app/api/__pycache__
+backend/.env

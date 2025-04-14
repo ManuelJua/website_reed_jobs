@@ -13,6 +13,7 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Job Search App</title>
     <style>
         body {
@@ -44,36 +45,42 @@
         /* Tab styles */
         .tabs {
             overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
-            border-radius: 4px 4px 0 0;
+            border: none;
+            background-color: transparent;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         .tab-button {
-            background-color: inherit;
-            float: left;
+            background-color: #2196F3;
+            color: white;
             border: none;
             outline: none;
             cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
             font-size: 16px;
-            flex: 1;
+            border-radius: 25px;
         }
 
         .tab-button:hover {
-            background-color: #ddd;
+            background-color: #1976D2;
+            transform: translateY(-2px);
         }
 
         .tab-button.active {
-            background-color: #ccc;
+            background-color: #1565C0;
             font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
         .tab-content {
             display: none;
             padding: 20px;
-            border: 1px solid #ccc;
+            /* border: 1px solid #ccc; */
             border-top: none;
             animation: fadeEffect 1s;
             border-radius: 0 0 4px 4px;
@@ -218,8 +225,8 @@
 
     <div id="salaryTab" class="tab-content">
         <div id="salaryHistogram">
-            <!-- Salary histogram will be rendered here -->
-            <div class="loading">Loading salary data...</div>
+            <canvas id="salaryChart"></canvas>
+            <canvas id="jobsByDayChart"></canvas>
         </div>
     </div>
 
@@ -346,18 +353,135 @@
 
         // Initialize the salary histogram
         function initSalaryHistogram(jobs) {
-            const histogramContainer = document.getElementById('salaryHistogram');
-            histogramContainer.innerHTML = '';
+            // Prepare salary data excluding outliers
+            const salaries = jobs.filter(job => job.salary).map(job => job.salary);
+            const q1 = Math.percentile(salaries, 25);
+            const q3 = Math.percentile(salaries, 75);
+            const iqr = q3 - q1;
+            const upperBound = q3 + 1.5 * iqr;
+            const lowerBound = q1 - 1.5 * iqr;
+            
+            const filteredSalaries = salaries.filter(salary => 
+                salary >= lowerBound && salary <= upperBound
+            );
 
-            // This is a placeholder for histogram implementation
-            // You would typically use a library like D3.js or Chart.js
-            histogramContainer.innerHTML = `
-                <div style="padding: 20px; text-align: center;">
-                    <p>Salary Distribution</p>
-                    <p>This is where you would integrate a charting library like D3.js or Chart.js to display salary distributions.</p>
-                    <p>Total jobs with salary data: ${jobs.filter(job => job.salary).length}</p>
-                </div>
-            `;
+            // Prepare jobs by day data
+            const jobsByDay = {};
+            jobs.forEach(job => {
+                const date = job.publication_date.split('T')[0];
+                jobsByDay[date] = (jobsByDay[date] || 0) + 1;
+            });
+
+            // Create salary distribution chart
+            const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+            new Chart(salaryCtx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: 20 }, (_, i) => 
+                        Math.round(lowerBound + (i * (upperBound - lowerBound) / 20))),
+                    datasets: [{
+                        label: 'Salary Distribution',
+                        data: getBinCounts(filteredSalaries, 20 , lowerBound, upperBound),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 20,
+                            right: 20,
+                            top: 20,
+                            bottom: 20
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Jobs'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Salary Range'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Create jobs by day chart
+            const jobsCtx = document.getElementById('jobsByDayChart').getContext('2d');
+            new Chart(jobsCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(jobsByDay).sort(),
+                    datasets: [{
+                        label: 'Jobs Posted per Day',
+                        data: Object.values(jobsByDay),
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 20,
+                            right: 20,
+                            top: 20,
+                            bottom: 20
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Jobs'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to calculate percentiles
+        Math.percentile = function(arr, p) {
+            if (arr.length === 0) return 0;
+            arr.sort((a, b) => a - b);
+            const index = Math.ceil((p/100) * arr.length) - 1;
+            return arr[index];
+        };
+
+        // Helper function to get bin counts for histogram
+        function getBinCounts(data, numBins, min, max) {
+            const bins = new Array(numBins).fill(0);
+            const binWidth = (max - min) / numBins;
+            
+            data.forEach(value => {
+                const binIndex = Math.min(
+                    Math.floor((value - min) / binWidth),
+                    numBins - 1
+                );
+                if (binIndex >= 0) bins[binIndex]++;
+            });
+            
+            return bins;
         }
 
         // Filter jobs based on search input
@@ -404,6 +528,16 @@
             // Show the current tab, and add an "active" class to the button that opened the tab
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
+
+            // Invalidate map size when switching to map tab
+            if (tabName === 'mapTab') {
+                map.invalidateSize();
+                // Recenter map on markers if there are any
+                const markers = Array.from(document.querySelectorAll('.leaflet-marker-icon'));
+                if (markers.length > 0) {
+                    map.fitBounds(L.featureGroup(markers.map(m => L.marker([m.lat, m.lng]))).getBounds());
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
