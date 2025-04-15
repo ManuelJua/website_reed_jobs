@@ -9,6 +9,7 @@ from loguru import logger
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
+from contextlib import asynccontextmanager
 
 
 
@@ -87,7 +88,18 @@ async def close_postgres() -> None:
     else:
         logger.warning("PostgreSQL connection pool was not initialized.")
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    """Initialize connections and resources before the application starts."""
+    await init_postgres()
+    # Initialize cache backend (InMemory or Redis for production)
+    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
+    yield
+    await close_postgres()
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Add CORS middleware configuration
 app.add_middleware(
@@ -98,17 +110,19 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize connections and resources before the application starts."""
-    await init_postgres()
-    # Initialize cache backend (InMemory or Redis for production)
-    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
+# @app.on_event("startup")
+# async def startup_event():
+#     """Initialize connections and resources before the application starts."""
+#     await init_postgres()
+#     # Initialize cache backend (InMemory or Redis for production)
+#     FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Clean up connections and resources when the application shuts down."""
-    await close_postgres()
+# @app.on_event("shutdown")
+# async def shutdown_event():
+#     """Clean up connections and resources when the application shuts down."""
+#     await close_postgres()
+
+
 
 @app.get("/jobs")
 @cache(expire=86400)  # Cache expires in 86400 seconds (1 day)
