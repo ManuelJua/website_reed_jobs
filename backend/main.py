@@ -10,7 +10,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
 
-from .postgres_connection import init_postgres, get_postgres, close_postgres
+
 
 
 conn_pool: Optional[asyncpg.Pool] = None
