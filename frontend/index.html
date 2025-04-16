@@ -249,8 +249,8 @@
         // Fetch jobs from API
         async function fetchJobs() {
             try {
-                let BACKEND_URL = process.env.BACKEND_URL
-                endpoint= BACKEND_URL + "/jobs"
+                
+                endpoint= "https://remarkable-possibility-production.up.railway.app" + "/jobs"
                 const response = await fetch(endpoint);
 
                 if (!response.ok) {
