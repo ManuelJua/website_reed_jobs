@@ -29,7 +29,7 @@ async def init_postgres() -> None:
         logger.info("Initializing PostgreSQL connection pool...")
         DATABASE_URL = f"postgresql://{os.getenv('NEON_DB_USER')}:{os.getenv('NEON_DB_PASSWORD')}@{os.getenv('NEON_DB_HOST')}:5432/{os.getenv('NEON_DB_NAME')}"
         conn_pool = await asyncpg.create_pool(
-            dsn=os.getenv("DATABASE_URL"), min_size=1, max_size=10
+            dsn=DATABASE_URL, min_size=1, max_size=10
         )
         logger.info("PostgreSQL connection pool created successfully.")
 
@@ -109,18 +109,6 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
-
-# @app.on_event("startup")
-# async def startup_event():
-#     """Initialize connections and resources before the application starts."""
-#     await init_postgres()
-#     # Initialize cache backend (InMemory or Redis for production)
-#     FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
-
-# @app.on_event("shutdown")
-# async def shutdown_event():
-#     """Clean up connections and resources when the application shuts down."""
-#     await close_postgres()
 
 
 
