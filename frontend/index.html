@@ -115,8 +115,9 @@
         td {
             padding: 12px;
             border: 1px solid #ddd;
-            vertical-align: top;
+            vertical-align: middle;
         }
+     
 
         tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -130,13 +131,20 @@
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
+            max-height: 40px; /* Limit the height */
+            overflow-y: auto; /* Add scrolling if content exceeds height */
+            align-items: center; /* Center keywords vertically */
         }
 
         .keyword {
             background-color: #e1f5fe;
-            padding: 3px 8px;
+            padding: 3px;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 16px;
+            display: inline-flex; /* Better alignment */
+            align-items: center;
+            margin: 2px;
+            white-space: nowrap; /* Prevent keyword text from wrapping */
         }
 
         .loading {
@@ -241,7 +249,9 @@
         // Fetch jobs from API
         async function fetchJobs() {
             try {
-                const response = await fetch('http://127.0.0.1:8080/jobs');
+                
+                endpoint= "https://remarkable-possibility-production.up.railway.app" + "/jobs"
+                const response = await fetch(endpoint);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
@@ -285,7 +295,6 @@
                     <tr>
                         <th>Job Title</th>
                         <th>Location</th>
-                        <th>Keywords</th>
                         <th>Salary</th>
                     </tr>
                 </thead>
@@ -298,19 +307,12 @@
             jobs.forEach(job => {
                 const row = document.createElement('tr');
 
-                // Format keywords as tags
-                const keywords = job.job_title.split(' ');
-                const keywordsHtml = keywords.map(keyword =>
-                    `<span class="keyword">${keyword}</span>`
-                ).join('');
-
                 // Assume we have salary data (adjust based on your actual data structure)
                 const salary = job.salary || 'Not specified';
 
                 row.innerHTML = `
                     <td>${job.job_title}</td>
                     <td>${job.location}</td>
-                    <td class="keywords-cell">${keywordsHtml}</td>
                     <td>${salary}</td>
                 `;
 
