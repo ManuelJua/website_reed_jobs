@@ -250,7 +250,7 @@
         async function fetchJobs() {
             try {
                 
-                endpoint= "https://remarkable-possibility-production.up.railway.app" + "/jobs"
+                endpoint= "http://127.0.0.1:8080" + "/jobs"
                 const response = await fetch(endpoint);
 
                 if (!response.ok) {

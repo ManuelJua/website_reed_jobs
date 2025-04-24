@@ -12,9 +12,8 @@ from fastapi_cache.decorator import cache
 from contextlib import asynccontextmanager
 
 
-
-
 conn_pool: Optional[asyncpg.Pool] = None
+
 
 async def init_postgres() -> None:
     """
@@ -36,7 +35,6 @@ async def init_postgres() -> None:
     except Exception as e:
         logger.error(f"Error initializing PostgreSQL connection pool: {e}")
         raise
-    
 
 
 async def get_postgres() -> asyncpg.Pool:
@@ -68,7 +66,6 @@ async def get_postgres() -> asyncpg.Pool:
         raise
 
 
-
 async def close_postgres() -> None:
     """
     Close the PostgreSQL connection pool.
@@ -90,7 +87,7 @@ async def close_postgres() -> None:
 
 
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
     """Initialize connections and resources before the application starts."""
     await init_postgres()
     # Initialize cache backend (InMemory or Redis for production)
@@ -111,35 +108,23 @@ app.add_middleware(
 )
 
 
-
 @app.get("/jobs")
 @cache(expire=86400)  # Cache expires in 86400 seconds (1 day)
 async def get_jobs(db_pool: asyncpg.Pool = Depends(get_postgres)):
     try:
         async with db_pool.acquire() as conn:
             results = await conn.fetch("""
-                SELECT j.id as id,
-                j.job_title as job_title,
-                j.location as location,
-                j.salary as salary,
-                j.job_url as job_url,
-                j.publication_date as publication_date,
-                j.expiration_date as expiration_date,
-                j.description as description,
-                j.employer_name as employer_name,
-                j.aplications as aplications,
-                c.latitude as latitude,
-                c.longitude as longitude
-                FROM jobs j join coordinates c
-                on j.location=c.location
-                where expiration_date>=current_date 
-                order by publication_date desc 
-                ;
+            SELECT * 
+            FROM jobs j 
+            JOIN coordinates c 
+            on j.location=c.location 
+            WHERE publication_date = CURRENT_DATE;
             """)
             return [dict(result) for result in results]
     except Exception as e:
         logger.error(f"Error fetching products: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve products")
-  
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve products")
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
