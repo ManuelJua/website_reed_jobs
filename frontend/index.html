@@ -311,7 +311,7 @@
                 const salary = job.salary || 'Not specified';
 
                 row.innerHTML = `
-                    <td>${job.job_title}</td>
+                    <td><a href=${job.job_url} target="_blank">${job.job_title}</a></td>
                     <td>${job.location}</td>
                     <td>${salary}</td>
                 `;
@@ -501,7 +501,7 @@
         }
 
         // Filter jobs based on search input
-        function filterJobs(searchTerm) {
+        async function filterJobs(searchTerm) {
             if (searchTerm.length === 0) {
                 displayJobs(allJobs);
                 updateMap(allJobs);
@@ -510,9 +510,12 @@
             }
             let regex = new RegExp(searchTerm.slice(1, -1), 'i');
 
-            const filteredJobs = allJobs.filter(job => {
-                return regex.test(job.description);
-            });
+            const filteredJobs = await fetch(`http://127.0.0.1:8080/jobs/search/${searchTerm}`)
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error fetching filtered jobs:', error);
+                    return [];
+                });
             
 
             displayJobs(filteredJobs);

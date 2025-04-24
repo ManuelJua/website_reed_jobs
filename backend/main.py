@@ -126,5 +126,29 @@ async def get_jobs(db_pool: asyncpg.Pool = Depends(get_postgres)):
         raise HTTPException(
             status_code=500, detail="Failed to retrieve products")
 
+@app.get("/jobs/search/{keyword}")
+@cache(expire=3600)  # Cache expires in 1 hour
+async def search_jobs_by_keyword(
+    keyword: str,
+    db_pool: asyncpg.Pool = Depends(get_postgres)
+):
+    try:
+        async with db_pool.acquire() as conn:
+            results = await conn.fetch("""
+            SELECT * 
+            FROM jobs j 
+            JOIN coordinates c 
+            ON j.location = c.location 
+            WHERE expiration_date >= CURRENT_DATE 
+            AND description ILIKE $1;
+            """, f'%{keyword}%')
+            
+            return [dict(result) for result in results]
+    except Exception as e:
+        logger.error(f"Error searching jobs by keyword: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to search jobs")
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
