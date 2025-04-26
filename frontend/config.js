@@ -1,1 +1,1 @@
-window.API_URL =import.meta.env.API_URL
+window.API_URL ="https://remarkable-possibility-production.up.railway.app"
