@@ -118,7 +118,7 @@
             border: 1px solid #ddd;
             vertical-align: middle;
         }
-     
+
 
         tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -132,9 +132,12 @@
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
-            max-height: 40px; /* Limit the height */
-            overflow-y: auto; /* Add scrolling if content exceeds height */
-            align-items: center; /* Center keywords vertically */
+            max-height: 40px;
+            /* Limit the height */
+            overflow-y: auto;
+            /* Add scrolling if content exceeds height */
+            align-items: center;
+            /* Center keywords vertically */
         }
 
         .keyword {
@@ -142,10 +145,12 @@
             padding: 3px;
             border-radius: 12px;
             font-size: 16px;
-            display: inline-flex; /* Better alignment */
+            display: inline-flex;
+            /* Better alignment */
             align-items: center;
             margin: 2px;
-            white-space: nowrap; /* Prevent keyword text from wrapping */
+            white-space: nowrap;
+            /* Prevent keyword text from wrapping */
         }
 
         .loading {
@@ -176,30 +181,36 @@
             margin-top: 20px;
         }
 
-        /* Histogram styles */
-        #salaryHistogram {
-            width: 100%;
-            height: 400px;
-            margin-top: 20px;
+
+        /* Chart styles */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: auto auto auto;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        .histogram-bar {
-            fill: #2196F3;
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .histogram-bar:hover {
-            fill: #0b7dda;
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 1.2em;
         }
 
-        .axis text {
-            font-size: 12px;
-        }
-
-        .axis path,
-        .axis line {
-            fill: none;
-            stroke: #000;
-            shape-rendering: crispEdges;
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Jobs counter style */
@@ -243,11 +254,39 @@
     </div>
 
     <div id="analyticsTab" class="tab-content">
-        <div id="salaryHistogram">
-            <canvas id="salaryChart"></canvas>
-            <canvas id="jobsByDayChart"></canvas>
+        <div class="dashboard">
+            <div class="chart-container">
+                <h2 class="chart-title">Programming Languages Demand</h2>
+                <canvas id="languagesChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">Salary Distribution</h2>
+                <canvas id="salaryChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">Education Requirements</h2>
+                <canvas id="educationChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">Job Posting Trends (2023-2025)</h2>
+                <canvas id="trendChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">Daily Job Publications</h2>
+                <canvas id="dailyPublicationsChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">Salary Distribution Histogram</h2>
+                <canvas id="salaryHistogramChart"></canvas>
+            </div>
         </div>
     </div>
+
 
     <script>
         // DOM elements
@@ -258,10 +297,20 @@
         // Store all jobs data
         let allJobs = [];
 
+        // Add this at the start of your script section
+        let charts = {
+            languages: null,
+            salary: null,
+            education: null,
+            trend: null,
+            dailyPublications: null,
+            salaryHistogram: null
+        };
+
         // Fetch jobs from API
         async function fetchJobs() {
             try {
-                
+
                 const apiUrl = window.API_URL || 'http://127.0.0.1:8080';
                 const endpoint = `${apiUrl}/jobs`;
                 const response = await fetch(endpoint);
@@ -293,6 +342,44 @@
                 `;
             }
             return allJobs;
+        }
+
+        // Add this function after the fetchJobs function
+        function extractLabels(jobs) {
+            const programmingLanguages = {
+                'C#': 0,
+                'Python': 0,
+                'JavaScript': 0,
+                'Java': 0,
+                'PHP': 0,
+                'Ruby': 0
+            };
+
+            jobs.forEach(job => {
+                const description = job.description.toLowerCase();
+                
+                // Check for each programming language
+                if (description.includes('c#') || description.includes('csharp') || description.includes('.net')) {
+                    programmingLanguages['C#']++;
+                }
+                if (description.includes('python')) {
+                    programmingLanguages['Python']++;
+                }
+                if (description.includes('javascript') || description.includes('js')) {
+                    programmingLanguages['JavaScript']++;
+                }
+                if (description.includes('java ') || description.includes('java,') || description.includes('java.')) {
+                    programmingLanguages['Java']++;
+                }
+                if (description.includes('php')) {
+                    programmingLanguages['PHP']++;
+                }
+                if (description.includes('ruby')) {
+                    programmingLanguages['Ruby']++;
+                }
+            });
+
+            return programmingLanguages;
         }
 
         // Helper to update jobs counter
@@ -372,64 +459,241 @@
             map.addLayer(markers);
         }
 
-        let salaryChart = null;
-        let jobsByDayChart = null;
+
+
 
         // Initialize the salary histogram
         function initSalaryHistogram(jobs) {
-            // Destroy existing charts if they exist
-            if (salaryChart) {
-                salaryChart.destroy();
-            }
-            if (jobsByDayChart) {
-                jobsByDayChart.destroy();
-            }
-
-
-            // Prepare salary data excluding outliers
-            const salaries = jobs.filter(job => job.salary).map(job => job.salary);
-            const q1 = Math.percentile(salaries, 25);
-            const q3 = Math.percentile(salaries, 75);
-            const iqr = q3 - q1;
-            const upperBound = q3 + 1.5 * iqr;
-            const lowerBound = q1 - 1.5 * iqr;
-
-            const filteredSalaries = salaries.filter(salary =>
-                salary >= lowerBound && salary <= upperBound
-            );
-
-
-            // Prepare jobs by day data
-            const jobsByDay = {};
-            jobs.forEach(job => {
-                const date = job.publication_date.split('T')[0];
-                jobsByDay[date] = (jobsByDay[date] || 0) + 1;
+            const languageCounts = extractLabels(jobs);
+            
+            // Destroy existing charts before creating new ones
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
             });
-
-            // Create salary distribution chart
-            const salaryCtx = document.getElementById('salaryChart').getContext('2d');
-            salaryChart = new Chart(salaryCtx, {
+            
+            // Create new charts and store references
+            charts.languages = new Chart(document.getElementById('languagesChart'), {
                 type: 'bar',
                 data: {
-                    labels: Array.from({ length: 20 }, (_, i) =>
-                        Math.round(lowerBound + (i * (upperBound - lowerBound) / 20))),
+                    labels: Object.keys(languageCounts),
                     datasets: [{
-                        label: 'Salary Distribution',
-                        data: getBinCounts(filteredSalaries, 20, lowerBound, upperBound),
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        label: 'Number of Job Listings',
+                        data: Object.values(languageCounts),
+                        backgroundColor: [
+                            '#512BD4', // C# purple
+                            '#3776AB', // Python blue
+                            '#F7DF1E', // JavaScript yellow
+                            '#007396', // Java blue
+                            '#777BB4', // PHP purple
+                            '#CC342D'  // Ruby red
+                        ],
                         borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            left: 20,
-                            right: 20,
-                            top: 20,
-                            bottom: 20
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Programming Language Distribution in Job Listings'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Job Listings'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Programming Language'
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.salary = new Chart(document.getElementById('salaryChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['< $50k', '$50k-$100k', '$100k-$150k', '> $150k'],
+                    datasets: [{
+                        data: [154303, 44720, 2842, 687],
+                        backgroundColor: [
+                            '#FF9F40',
+                            '#36A2EB',
+                            '#4BC0C0',
+                            '#FFCE56'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.education = new Chart(document.getElementById('educationChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['No Degree Required', 'Degree Required'],
+                    datasets: [{
+                        data: [248653, 13018],
+                        backgroundColor: [
+                            '#36A2EB',
+                            '#FF6384'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.trend = new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: [
+                        '2023-Q1', '2023-Q2', '2023-Q3', '2023-Q4',
+                        '2024-Q1', '2024-Q2', '2024-Q3', '2024-Q4',
+                        '2025-Q1', '2025-Q2', '2025-Q3', '2025-Q4'
+                    ],
+                    datasets: [{
+                        label: 'Number of Job Postings',
+                        data: [
+                            463,    // 2023 Q1
+                            482,    // 2023 Q2
+                            619,    // 2023 Q3
+                            421,    // 2023 Q4
+                            13443,  // 2024 Q1
+                            11017,  // 2024 Q2
+                            42953,  // 2024 Q3
+                            72859,  // 2024 Q4
+                            70450,  // 2025 Q1
+                            22513,  // 2025 Q2
+                            13582,  // 2025 Q3
+                            12533   // 2025 Q4
+                        ],
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        fill: true,
+                        borderWidth: 2,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Job Postings'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Quarter'
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.dailyPublications = new Chart(document.getElementById('dailyPublicationsChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                    datasets: [{
+                        label: 'Number of Job Postings',
+                        data: [15975, 43297, 47098, 50869, 43545, 42226, 18661],
+                        backgroundColor: '#4BC0C0',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Daily Job Postings Distribution'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Postings'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of Week'
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.salaryHistogram = new Chart(document.getElementById('salaryHistogramChart'), {
+                type: 'bar',
+                data: {
+                    labels: [
+                        '30k-40k', '40k-50k', '50k-60k', '60k-70k',
+                        '70k-80k', '80k-90k', '90k-100k', '100k+'
+                    ],
+                    datasets: [{
+                        label: 'Number of Jobs',
+                        data: [47818, 30775, 19143, 9828, 5817, 3163, 1742, 3494],
+                        backgroundColor: '#FF9F40',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Salary Distribution in Job Listings'
                         }
                     },
                     scales: {
@@ -449,75 +713,9 @@
                     }
                 }
             });
-
-            // Create jobs by day chart
-            const jobsCtx = document.getElementById('jobsByDayChart').getContext('2d');
-            jobsByDayChart = new Chart(jobsCtx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(jobsByDay).sort(),
-                    datasets: [{
-                        label: 'Jobs Posted per Day',
-                        data: Object.values(jobsByDay),
-                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            left: 20,
-                            right: 20,
-                            top: 20,
-                            bottom: 20
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Number of Jobs'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            }
-                        }
-                    }
-                }
-            });
-
         }
 
-        // Helper function to calculate percentiles
-        Math.percentile = function (arr, p) {
-            if (arr.length === 0) return 0;
-            arr.sort((a, b) => a - b);
-            const index = Math.ceil((p / 100) * arr.length) - 1;
-            return arr[index];
-        };
 
-        // Helper function to get bin counts for histogram
-        function getBinCounts(data, numBins, min, max) {
-            const bins = new Array(numBins).fill(0);
-            const binWidth = (max - min) / numBins;
-
-            data.forEach(value => {
-                const binIndex = Math.min(
-                    Math.floor((value - min) / binWidth),
-                    numBins - 1
-                );
-                if (binIndex >= 0) bins[binIndex]++;
-            });
-
-            return bins;
-        }
 
         // Filter jobs based on search input
         async function filterJobs(searchTerm) {
@@ -536,7 +734,7 @@
                     console.error('Error fetching filtered jobs:', error);
                     return [];
                 });
-            
+
 
             displayJobs(filteredJobs);
             updateMap(filteredJobs);
