@@ -126,6 +126,7 @@ async def get_jobs(db_pool: asyncpg.Pool = Depends(get_postgres)):
         raise HTTPException(
             status_code=500, detail="Failed to retrieve products")
 
+
 @app.get("/jobs/search/{keyword}")
 @cache(expire=3600)  # Cache expires in 1 hour
 async def search_jobs_by_keyword(
@@ -133,19 +134,59 @@ async def search_jobs_by_keyword(
     db_pool: asyncpg.Pool = Depends(get_postgres)
 ):
     try:
-        async with db_pool.acquire() as conn:
-            results = await conn.fetch("""
+        words = keyword.split()
+        if not words:
+            return []
+
+        # Build dynamic WHERE clause for each word
+        ilike_clauses = " OR ".join(
+            [f"description ILIKE ${i+1}" for i in range(len(words))])
+        sql = f"""
             SELECT * 
             FROM jobs j 
             JOIN coordinates c 
             ON j.location = c.location 
             WHERE expiration_date >= CURRENT_DATE 
-            AND description ILIKE $1;
-            """, f'%{keyword}%')
-            
+            AND ({ilike_clauses});
+        """
+        params = [f"%{word}%" for word in words]
+
+        async with db_pool.acquire() as conn:
+            results = await conn.fetch(sql, *params)
             return [dict(result) for result in results]
     except Exception as e:
         logger.error(f"Error searching jobs by keyword: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to search jobs")
+
+
+@app.get("/jobs/search/{keywords}")
+@cache(expire=3600)
+async def search_jobs_by_keywords(
+    keywords: str,
+    db_pool: asyncpg.Pool = Depends(get_postgres)
+):
+    try:
+        if not keywords:
+            return []
+        keywords = keywords.split()
+        ilike_clauses = " OR ".join(
+            [f"description ILIKE ${i+1}" for i in range(len(keywords))])
+        sql = f"""
+            SELECT * 
+            FROM jobs j 
+            JOIN coordinates c 
+            ON j.location = c.location 
+            WHERE expiration_date >= CURRENT_DATE 
+            AND ({ilike_clauses});
+        """
+        params = [f"%{keyword}%" for keyword in keywords]
+
+        async with db_pool.acquire() as conn:
+            results = await conn.fetch(sql, *params)
+            return [dict(result) for result in results]
+    except Exception as e:
+        logger.error(f"Error searching jobs by regex: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to search jobs")
 
