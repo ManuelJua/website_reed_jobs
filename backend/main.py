@@ -10,12 +10,16 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
 
 
 conn_pool: Optional[asyncpg.Pool] = None
 
 
 async def init_postgres() -> None:
+
+    
     """
     Initialize the PostgreSQL connection pool and create the products table if it doesn't exist.
 
@@ -23,6 +27,8 @@ async def init_postgres() -> None:
     initialize a connection pool to PostgreSQL and ensure that the required
     database schema is in place.
     """
+    load_dotenv()
+
     global conn_pool
     try:
         logger.info("Initializing PostgreSQL connection pool...")
@@ -134,25 +140,18 @@ async def search_jobs_by_keyword(
     db_pool: asyncpg.Pool = Depends(get_postgres)
 ):
     try:
-        words = keyword.split()
-        if not words:
-            return []
-
-        # Build dynamic WHERE clause for each word
-        ilike_clauses = " OR ".join(
-            [f"description ILIKE ${i+1}" for i in range(len(words))])
-        sql = f"""
+        sql = """
             SELECT * 
             FROM jobs j 
             JOIN coordinates c 
             ON j.location = c.location 
             WHERE expiration_date >= CURRENT_DATE 
-            AND ({ilike_clauses});
+            AND description ILIKE $1;
         """
-        params = [f"%{word}%" for word in words]
-
+        # Add wildcards to the keyword for partial matching
+        search_pattern = f"%{keyword}%"
         async with db_pool.acquire() as conn:
-            results = await conn.fetch(sql, *params)
+            results = await conn.fetch(sql, search_pattern)
             return [dict(result) for result in results]
     except Exception as e:
         logger.error(f"Error searching jobs by keyword: {e}")
@@ -169,21 +168,18 @@ async def search_jobs_by_keywords(
     try:
         if not keywords:
             return []
-        keywords = keywords.split()
-        ilike_clauses = " OR ".join(
-            [f"description ILIKE ${i+1}" for i in range(len(keywords))])
-        sql = f"""
+        sql = """
             SELECT * 
             FROM jobs j 
             JOIN coordinates c 
             ON j.location = c.location 
             WHERE expiration_date >= CURRENT_DATE 
-            AND ({ilike_clauses});
+            AND description ILIKE $1;
         """
-        params = [f"%{keyword}%" for keyword in keywords]
-
+        # Add wildcards to the keyword for partial matching
+        search_pattern = f"%{keywords}%"
         async with db_pool.acquire() as conn:
-            results = await conn.fetch(sql, *params)
+            results = await conn.fetch(sql, search_pattern)
             return [dict(result) for result in results]
     except Exception as e:
         logger.error(f"Error searching jobs by regex: {e}")
