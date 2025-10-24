@@ -432,7 +432,8 @@
                 'JavaScript': 0,
                 'Java': 0,
                 'PHP': 0,
-                'Ruby': 0
+                'Ruby': 0,
+                'Golang': 0
             };
 
             jobs.forEach(job => {
@@ -456,6 +457,9 @@
                 }
                 if (description.includes('ruby')) {
                     programmingLanguages['Ruby']++;
+                }
+                 if (description.includes('golang')) {
+                    programmingLanguages['Golang']++;
                 }
             });
 
@@ -858,11 +862,17 @@
                     console.error('Error fetching filtered jobs:', error);
                     return [];
                 });
+            const filteredJobsForAnalytics = await fetch(`${apiUrl}/jobs/analytics/${searchTerm}`)
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error fetching filtered jobs:', error);
+                    return [];
+                });
 
 
             displayJobs(filteredJobs);
             updateMap(filteredJobs);
-            initSalaryHistogram(filteredJobs);
+            initSalaryHistogram(filteredJobsForAnalytics);
         }
 
         // Tab functionality

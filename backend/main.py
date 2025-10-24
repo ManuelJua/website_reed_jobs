@@ -10,7 +10,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
 from contextlib import asynccontextmanager
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 
 
@@ -27,7 +27,7 @@ async def init_postgres() -> None:
     initialize a connection pool to PostgreSQL and ensure that the required
     database schema is in place.
     """
-    # load_dotenv()
+    load_dotenv()
 
     global conn_pool
     try:
@@ -133,10 +133,10 @@ async def get_jobs(db_pool: asyncpg.Pool = Depends(get_postgres)):
             status_code=500, detail="Failed to retrieve products")
 
 
-@app.get("/jobs/search/{keyword}")
+@app.get("/jobs/analytics/{keywords}")
 @cache(expire=3600)  # Cache expires in 1 hour
-async def search_jobs_by_keyword(
-    keyword: str,
+async def analytics_by_keywords(
+    keywords: str,
     db_pool: asyncpg.Pool = Depends(get_postgres)
 ):
     try:
@@ -145,16 +145,15 @@ async def search_jobs_by_keyword(
             FROM jobs j 
             JOIN coordinates c 
             ON j.location = c.location 
-            WHERE expiration_date >= CURRENT_DATE 
             AND description ILIKE $1;
         """
-        # Add wildcards to the keyword for partial matching
-        search_pattern = f"%{keyword}%"
+        # Add wildcards to the keywords for partial matching
+        search_pattern = f"%{keywords}%"
         async with db_pool.acquire() as conn:
             results = await conn.fetch(sql, search_pattern)
             return [dict(result) for result in results]
     except Exception as e:
-        logger.error(f"Error searching jobs by keyword: {e}")
+        logger.error(f"Error searching jobs by keywords: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to search jobs")
 
