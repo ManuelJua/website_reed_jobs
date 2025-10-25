@@ -10,7 +10,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
 
@@ -27,7 +27,7 @@ async def init_postgres() -> None:
     initialize a connection pool to PostgreSQL and ensure that the required
     database schema is in place.
     """
-    load_dotenv()
+    # load_dotenv()
 
     global conn_pool
     try:
