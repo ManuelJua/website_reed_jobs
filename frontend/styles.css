@@ -1,0 +1,206 @@
+/* Main Styles for Job Search App */
+
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Tab styles */
+.tabs {
+    overflow: hidden;
+    border: none;
+    background-color: transparent;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    border-radius: 25px;
+}
+
+.tab-button:hover {
+    background-color: #1976D2;
+    transform: translateY(-2px);
+}
+
+.tab-button.active {
+    background-color: #1565C0;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+    /* border: 1px solid #ccc; */
+    border-top: none;
+    animation: fadeEffect 1s;
+    border-radius: 0 0 4px 4px;
+}
+
+@keyframes fadeEffect {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th {
+    background-color: #f2f2f2;
+    text-align: left;
+    padding: 12px;
+    border: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+}
+
+td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+}
+
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+.keywords-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-height: 40px;
+    /* Limit the height */
+    overflow-y: auto;
+    /* Add scrolling if content exceeds height */
+    align-items: center;
+    /* Center keywords vertically */
+}
+
+.keyword {
+    background-color: #e1f5fe;
+    padding: 3px;
+    border-radius: 12px;
+    font-size: 16px;
+    display: inline-flex;
+    /* Better alignment */
+    align-items: center;
+    margin: 2px;
+    white-space: nowrap;
+    /* Prevent keyword text from wrapping */
+}
+
+.loading {
+    text-align: center;
+    font-size: 18px;
+    margin: 20px 0;
+}
+
+.error {
+    text-align: center;
+    color: #d32f2f;
+    font-size: 18px;
+    margin: 20px 0;
+}
+
+.no-results {
+    text-align: center;
+    font-style: italic;
+    margin: 20px 0;
+}
+
+/* Map styles */
+#jobMap {
+    width: 100%;
+    height: 500px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+
+/* Chart styles */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.chart-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.chart-title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 1.2em;
+}
+
+@media (max-width: 1024px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Jobs counter style */
+#jobsCounter {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #1565C0;
+    font-weight: bold;
+}
