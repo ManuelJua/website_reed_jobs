@@ -124,6 +124,15 @@ allowed_origins = [
     f"http://127.0.0.1:{LOCAL_BACKEND_PORT}",
 ]
 
+# Add CORS middleware to the app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/jobs")
 @cache(expire=86400)  # Cache expires in 86400 seconds (1 day)
