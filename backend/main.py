@@ -32,7 +32,11 @@ async def init_postgres() -> None:
     global conn_pool
     try:
         logger.info("Initializing PostgreSQL connection pool...")
-        DATABASE_URL = f"postgresql://{os.getenv('NEON_DB_USER')}:{os.getenv('NEON_DB_PASSWORD')}@{os.getenv('NEON_DB_HOST')}:{os.getenv('NEON_DB_PORT')}/{os.getenv('NEON_DB_NAME')}"
+        # Use a single environment variable that contains the full connection URL
+        DATABASE_URL = os.getenv("DATABASE_URL")
+        if not DATABASE_URL:
+            logger.error("DATABASE_URL (or NEON_DATABASE_URL) environment variable is not set.")
+            raise EnvironmentError("DATABASE_URL environment variable is required")
         conn_pool = await asyncpg.create_pool(
             dsn=DATABASE_URL, min_size=1, max_size=10
         )
