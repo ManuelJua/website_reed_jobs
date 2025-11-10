@@ -1,1 +1,1 @@
-window.API_URL = "https://remarkable-possibility.railway.internal"
+window.API_URL = "http://remarkable-possibility.railway.internal"
