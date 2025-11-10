@@ -13,13 +13,10 @@ from contextlib import asynccontextmanager
 # from dotenv import load_dotenv
 
 
-
 conn_pool: Optional[asyncpg.Pool] = None
 
 
 async def init_postgres() -> None:
-
-    
     """
     Initialize the PostgreSQL connection pool and create the products table if it doesn't exist.
 
@@ -35,8 +32,10 @@ async def init_postgres() -> None:
         # Use a single environment variable that contains the full connection URL
         DATABASE_URL = os.getenv("DATABASE_URL")
         if not DATABASE_URL:
-            logger.error("DATABASE_URL (or NEON_DATABASE_URL) environment variable is not set.")
-            raise EnvironmentError("DATABASE_URL environment variable is required")
+            logger.error(
+                "DATABASE_URL (or NEON_DATABASE_URL) environment variable is not set.")
+            raise EnvironmentError(
+                "DATABASE_URL environment variable is required")
         conn_pool = await asyncpg.create_pool(
             dsn=DATABASE_URL, min_size=1, max_size=10
         )
@@ -109,13 +108,21 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Add CORS middleware configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
+# Configure allowed origins from environment variables with sensible defaults
+# Set FRONTEND_URL and BACKEND_URL in your Railway environment variables
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+BACKEND_URL = os.getenv("BACKEND_URL")
+LOCAL_FRONTEND_PORT = os.getenv("LOCAL_FRONTEND_PORT", "8000")
+LOCAL_BACKEND_PORT = os.getenv("LOCAL_BACKEND_PORT", "8080")
+
+allowed_origins = [
+    FRONTEND_URL,
+    BACKEND_URL,
+    f"http://localhost:{LOCAL_FRONTEND_PORT}",
+    f"http://localhost:{LOCAL_BACKEND_PORT}",
+    f"http://127.0.0.1:{LOCAL_FRONTEND_PORT}",
+    f"http://127.0.0.1:{LOCAL_BACKEND_PORT}",
+]
 
 
 @app.get("/jobs")
