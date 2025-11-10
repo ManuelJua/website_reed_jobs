@@ -124,6 +124,9 @@ allowed_origins = [
     f"http://127.0.0.1:{LOCAL_BACKEND_PORT}",
 ]
 
+# Filter out None values
+allowed_origins = [origin for origin in allowed_origins if origin is not None]
+
 # Add CORS middleware to the app
 app.add_middleware(
     CORSMiddleware,
