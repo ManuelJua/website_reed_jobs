@@ -32,7 +32,7 @@ async def init_postgres() -> None:
     global conn_pool
     try:
         logger.info("Initializing PostgreSQL connection pool...")
-        DATABASE_URL = f"postgresql://{os.getenv('NEON_DB_USER')}:{os.getenv('NEON_DB_PASSWORD')}@{os.getenv('NEON_DB_HOST')}:5432/{os.getenv('NEON_DB_NAME')}"
+        DATABASE_URL = f"postgresql://{os.getenv('NEON_DB_USER')}:{os.getenv('NEON_DB_PASSWORD')}@{os.getenv('NEON_DB_HOST')}:{os.getenv('NEON_DB_PORT')}/{os.getenv('NEON_DB_NAME')}"
         conn_pool = await asyncpg.create_pool(
             dsn=DATABASE_URL, min_size=1, max_size=10
         )
