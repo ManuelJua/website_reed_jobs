@@ -109,28 +109,18 @@ app = FastAPI(lifespan=lifespan)
 
 # Add CORS middleware configuration
 # Configure allowed origins from environment variables with sensible defaults
-# Set FRONTEND_URL and BACKEND_URL in your Railway environment variables
-FRONTEND_URL = os.getenv("FRONTEND_URL")
-BACKEND_URL = os.getenv("BACKEND_URL")
-LOCAL_FRONTEND_PORT = os.getenv("LOCAL_FRONTEND_PORT", "8000")
-LOCAL_BACKEND_PORT = os.getenv("LOCAL_BACKEND_PORT", "8080")
 
-allowed_origins = [
-    FRONTEND_URL,
-    BACKEND_URL,
-    f"http://localhost:{LOCAL_FRONTEND_PORT}",
-    f"http://localhost:{LOCAL_BACKEND_PORT}",
-    f"http://127.0.0.1:{LOCAL_FRONTEND_PORT}",
-    f"http://127.0.0.1:{LOCAL_BACKEND_PORT}",
+origins = [
+    "http://happy-abundance-production.up.railway.app:8000",
+    "https://happy-abundance-production.up.railway.app:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
-
-# Filter out None values
-allowed_origins = [origin for origin in allowed_origins if origin is not None]
 
 # Add CORS middleware to the app
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
