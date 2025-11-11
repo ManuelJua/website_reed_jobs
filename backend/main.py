@@ -156,17 +156,34 @@ async def analytics_by_keywords(
     db_pool: asyncpg.Pool = Depends(get_postgres)
 ):
     try:
-        sql = """
-            SELECT * 
+        if not keywords:
+            return []
+
+        # Create SQL query to consider "AND" and "OR" logic operators for search terms
+        keywords_list = [kw.strip() for kw in re.split(r'\s+(AND|OR)\s+', keywords)]
+        param=1
+        where_list=[]
+        for keyword in keywords_list:
+            if keyword not in ("AND","OR"):
+                where_list.append(f"(job_title ILIKE ${param} OR description ILIKE ${param})")
+                param+=1
+            elif keyword=="AND":
+                where_list.append("AND")
+            else:
+                where_list.append("OR")
+        
+        where_clause = " ".join(where_list)
+        all_params=["%"+kw+"%" for kw in keywords_list if kw not in ("AND","OR")]
+
+        sql = f"""
+            SELECT *
             FROM jobs j 
-            JOIN coordinates c 
-            ON j.location = c.location 
-            WHERE description ILIKE $1;
+            WHERE expiration_date >= CURRENT_DATE 
+            AND ({where_clause});
         """
-        # Add wildcards to the keywords for partial matching
-        search_pattern = f"%{keywords}%"
+
         async with db_pool.acquire() as conn:
-            results = await conn.fetch(sql, search_pattern)
+            results = await conn.fetch(sql, *all_params)
             return [dict(result) for result in results]
     except Exception as e:
         logger.error(f"Error searching jobs by keywords: {e}")
