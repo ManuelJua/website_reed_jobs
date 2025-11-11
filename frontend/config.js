@@ -1,1 +1,1 @@
-window.API_URL = "https://remarkable-possibility-staging.up.railway.app"
+window.API_URL = "https://noble-wisdom-production.up.railway.app"
