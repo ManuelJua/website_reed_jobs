@@ -112,10 +112,10 @@ app = FastAPI(lifespan=lifespan)
 # Configure allowed origins from environment variables with sensible defaults
 
 origins = [
-    "http://websitereedjobs-improve-sql.up.railway.app:8000",
-    "https://websitereedjobs-improve-sql.up.railway.app:8000",
-    "http://websitereedjobs-improve-sql.up.railway.app",
-    "https://websitereedjobs-improve-sql.up.railway.app",
+    "http://websitereedjobs-production.up.railway.app:8000",
+    "https://websitereedjobs-production.up.railway.app:8000",
+    "http://websitereedjobs-production.up.railway.app",
+    "https://websitereedjobs-production.up.railway.app",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
