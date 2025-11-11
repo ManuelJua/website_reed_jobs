@@ -182,21 +182,50 @@ async def search_jobs_by_keywords(
     try:
         if not keywords:
             return []
-        sql = """
-            SELECT * 
+        
+        # Split by OR first to get OR groups
+        or_segments = keywords.split(" OR ")
+        
+        # Process each OR segment for AND conditions
+        all_conditions = []
+        all_params = []
+        param_counter = 1
+        
+        for segment in or_segments:
+            # Split by AND to get individual terms
+            and_terms = [term.strip() for term in segment.split(" AND ") if term.strip()]
+            
+            if and_terms:
+                # Build AND conditions for this segment
+                and_conditions = []
+                for term in and_terms:
+                    and_conditions.append(f"j.description ILIKE ${param_counter}")
+                    all_params.append(f"%{term}%")
+                    param_counter += 1
+                
+                # Wrap AND conditions in parentheses
+                all_conditions.append(f"({' AND '.join(and_conditions)})")
+        
+        if not all_conditions:
+            return []
+        
+        # Combine all OR groups
+        where_clause = " OR ".join(all_conditions)
+        
+        sql = f"""
+            SELECT j.*, c.latitude, c.longitude 
             FROM jobs j 
             JOIN coordinates c 
             ON j.location = c.location 
             WHERE expiration_date >= CURRENT_DATE 
-            AND description ILIKE $1;
+            AND ({where_clause});
         """
-        # Add wildcards to the keyword for partial matching
-        search_pattern = f"%{keywords}%"
+        
         async with db_pool.acquire() as conn:
-            results = await conn.fetch(sql, search_pattern)
+            results = await conn.fetch(sql, *all_params)
             return [dict(result) for result in results]
     except Exception as e:
-        logger.error(f"Error searching jobs by regex: {e}")
+        logger.error(f"Error searching jobs by keywords: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to search jobs")
 
