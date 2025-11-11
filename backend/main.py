@@ -160,7 +160,7 @@ async def analytics_by_keywords(
             FROM jobs j 
             JOIN coordinates c 
             ON j.location = c.location 
-            AND description ILIKE $1;
+            WHERE description ILIKE $1;
         """
         # Add wildcards to the keywords for partial matching
         search_pattern = f"%{keywords}%"
