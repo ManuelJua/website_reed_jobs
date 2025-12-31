@@ -24,6 +24,7 @@ export class JobList {
                     <th>Job Title</th>
                     <th>Location</th>
                     <th>Salary</th>
+                    <th>Company</th>
                 </tr>
             </thead>
             <tbody id="jobsTableBody">
@@ -40,6 +41,7 @@ export class JobList {
                 <td><a href="${job.job_url}" target="_blank">${job.job_title}</a></td>
                 <td>${job.location}</td>
                 <td>${salary}</td>
+                <td>${job.employer_name}</td>
             `;
 
             tableBody.appendChild(row);
