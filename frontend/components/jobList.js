@@ -3,6 +3,9 @@ export class JobList {
     constructor(containerId, counterId) {
         this.container = document.getElementById(containerId);
         this.counter = document.getElementById(counterId);
+        this.jobs = [];
+        this.sortColumn = null;
+        this.sortDirection = 'asc';
     }
 
     updateCounter(count) {
@@ -10,6 +13,7 @@ export class JobList {
     }
 
     display(jobs) {
+        this.jobs = jobs;
         this.updateCounter(jobs.length);
         
         if (jobs.length === 0) {
@@ -21,17 +25,43 @@ export class JobList {
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>Job Title</th>
-                    <th>Location</th>
-                    <th>Salary</th>
-                    <th>Company</th>
+                    <th data-column="job_title" style="cursor: pointer;">
+                        Job Title <span class="sort-indicator"></span>
+                    </th>
+                    <th data-column="location" style="cursor: pointer;">
+                        Location <span class="sort-indicator"></span>
+                    </th>
+                    <th data-column="salary" style="cursor: pointer;">
+                        Salary <span class="sort-indicator"></span>
+                    </th>
+                    <th data-column="employer_name" style="cursor: pointer;">
+                        Company <span class="sort-indicator"></span>
+                    </th>
                 </tr>
             </thead>
             <tbody id="jobsTableBody">
             </tbody>
         `;
 
+        // Add click handlers to headers
+        const headers = table.querySelectorAll('th[data-column]');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.getAttribute('data-column');
+                this.sortBy(column);
+            });
+        });
+
+        this.renderTableBody(table, jobs);
+        this.updateSortIndicators(table);
+
+        this.container.innerHTML = '';
+        this.container.appendChild(table);
+    }
+
+    renderTableBody(table, jobs) {
         const tableBody = table.querySelector('#jobsTableBody');
+        tableBody.innerHTML = '';
 
         jobs.forEach(job => {
             const row = document.createElement('tr');
@@ -46,9 +76,58 @@ export class JobList {
 
             tableBody.appendChild(row);
         });
+    }
 
-        this.container.innerHTML = '';
-        this.container.appendChild(table);
+    sortBy(column) {
+        // Toggle direction if clicking the same column
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+
+        // Sort the jobs array
+        const sortedJobs = [...this.jobs].sort((a, b) => {
+            let valueA = a[column];
+            let valueB = b[column];
+
+        
+            // Handle null/undefined values
+            if (valueA == null) valueA = '';
+            if (valueB == null) valueB = '';
+
+            // Convert to strings for comparison (except numbers)
+            if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+            if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+
+            let comparison = 0;
+            if (valueA > valueB) {
+                comparison = 1;
+            } else if (valueA < valueB) {
+                comparison = -1;
+            }
+
+            return this.sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        // Re-render the table with sorted data
+        this.display(sortedJobs);
+    }
+
+
+    updateSortIndicators(table) {
+        const headers = table.querySelectorAll('th[data-column]');
+        headers.forEach(header => {
+            const column = header.getAttribute('data-column');
+            const indicator = header.querySelector('.sort-indicator');
+            
+            if (column === this.sortColumn) {
+                indicator.textContent = this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+            } else {
+                indicator.textContent = '';
+            }
+        });
     }
 
     showError(message) {
